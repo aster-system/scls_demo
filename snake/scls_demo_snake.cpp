@@ -142,32 +142,32 @@ namespace scls {
 
             // Create the textures
             // Bottom snake texture
-            a_bottom_snake_head_texture = std::make_shared<Image>(100, 100, Color(0, 0, 0, 0));
+            a_bottom_snake_head_texture = std::make_shared<scls::__Image_Base>(100, 100, Color(0, 0, 0, 0));
             a_bottom_snake_head_texture.get()->fill_rect(10, 63, 25, 25, Color(255, 255, 255, 255));
             a_bottom_snake_head_texture.get()->fill_rect(65, 63, 25, 25, Color(255, 255, 255, 255));
             a_bottom_snake_head_texture.get()->fill_rect(15, 73, 15, 15, Color(0, 0, 0, 255));
             a_bottom_snake_head_texture.get()->fill_rect(70, 73, 15, 15, Color(0, 0, 0, 255));
             // Left snake texture
-            a_left_snake_head_texture = std::make_shared<Image>(100, 100, Color(0, 0, 0, 0));
+            a_left_snake_head_texture = std::make_shared<scls::__Image_Base>(100, 100, Color(0, 0, 0, 0));
             a_left_snake_head_texture.get()->fill_rect(12 , 10, 25, 25, Color(255, 255, 255, 255));
             a_left_snake_head_texture.get()->fill_rect(12 , 65, 25, 25, Color(255, 255, 255, 255));
             a_left_snake_head_texture.get()->fill_rect(12 , 15, 15, 15, Color(0, 0, 0, 255));
             a_left_snake_head_texture.get()->fill_rect(12 , 70, 15, 15, Color(0, 0, 0, 255));
             // Right snake texture
-            a_right_snake_head_texture = std::make_shared<Image>(100, 100, Color(0, 0, 0, 0));
+            a_right_snake_head_texture = std::make_shared<scls::__Image_Base>(100, 100, Color(0, 0, 0, 0));
             a_right_snake_head_texture.get()->fill_rect(63, 10, 25, 25, Color(255, 255, 255, 255));
             a_right_snake_head_texture.get()->fill_rect(63, 65, 25, 25, Color(255, 255, 255, 255));
             a_right_snake_head_texture.get()->fill_rect(73, 15, 15, 15, Color(0, 0, 0, 255));
             a_right_snake_head_texture.get()->fill_rect(73, 70, 15, 15, Color(0, 0, 0, 255));
             // Top snake texture
-            a_top_snake_head_texture = std::make_shared<Image>(100, 100, Color(0, 0, 0, 0));
+            a_top_snake_head_texture = std::make_shared<scls::__Image_Base>(100, 100, Color(0, 0, 0, 0));
             a_top_snake_head_texture.get()->fill_rect(10, 12, 25, 25, Color(255, 255, 255, 255));
             a_top_snake_head_texture.get()->fill_rect(65, 12, 25, 25, Color(255, 255, 255, 255));
             a_top_snake_head_texture.get()->fill_rect(15, 12, 15, 15, Color(0, 0, 0, 255));
             a_top_snake_head_texture.get()->fill_rect(70, 12, 15, 15, Color(0, 0, 0, 255));
             // Dead head texture
             // Texture of the bottom of the head of the snake
-            a_bottom_snake_dead_head_texture = std::make_shared<Image>(100, 100, Color(0, 0, 0, 0));
+            a_bottom_snake_dead_head_texture = std::make_shared<scls::__Image_Base>(100, 100, Color(0, 0, 0, 0));
             a_bottom_snake_dead_head_texture.get()->draw_line(10, 65, 35, 90, Color(0, 0, 0, 255), 7);
             a_bottom_snake_dead_head_texture.get()->draw_line(35, 65, 10, 90, Color(0, 0, 0, 255), 7);
             a_bottom_snake_dead_head_texture.get()->draw_line(90, 65, 65, 90, Color(0, 0, 0, 255), 7);

@@ -66,7 +66,7 @@ namespace scls {
         //*********
 
         // Does a raycast in the map
-        Raycast_Map::Raycast Raycast_Map::raycast(double start_x, double start_y, double angle_in_degrees) {
+        Raycast_Map::Raycast Raycast_Map::raycast(double start_x, double start_y, double angle_in_degrees, bool ignore_collision) {
             // Calculate the needed datas
             double angle_in_radians = (angle_in_degrees / 180.0) * SCLS_PI;
             bool continue_horizontal = true; bool continue_vertical = true;
@@ -74,11 +74,13 @@ namespace scls {
             if(cos_angle == 0) cos_angle = 0.000001; if(sin_angle == 0) sin_angle = 0.000001;
             double horizontal_advance = 1;
             if(cos_angle < 0) horizontal_advance = -1;
+            Case* horizontal_case = 0;
             double horizontal_ratio = std::abs(sin_angle / cos_angle);
             if(sin_angle < 0) horizontal_ratio = -horizontal_ratio;
             double horizontal_x = 0; double horizontal_y = 0;
             double vertical_advance = 1;
             if(sin_angle < 0) vertical_advance = -1;
+            Case* vertical_case = 0;
             double vertical_ratio = std::abs(cos_angle / sin_angle);
             if(cos_angle < 0) vertical_ratio = -vertical_ratio;
             double vertical_x = 0; double vertical_y = 0;
@@ -94,7 +96,10 @@ namespace scls {
             int used_x = current_x;
             if(horizontal_advance < 0) used_x = current_x - 1;
             int used_y = std::floor(current_y);
-            if(!((used_x < 0 || used_x >= width()) || (used_y < 0 || used_y >= height()) || (case_at(used_x, used_y)->number() != 0))) {
+            // Do the first test
+            if((used_x < 0 || used_x >= width()) || (used_y < 0 || used_y >= height())) {continue_horizontal = false;}
+            else if(case_at(used_x, used_y)->number() != 0 && !ignore_collision) {continue_horizontal = false;horizontal_case = case_at(used_x, used_y);}
+            else {
                 while(continue_horizontal) {
                     // Advance the ray
                     current_x += horizontal_advance;
@@ -104,8 +109,11 @@ namespace scls {
                     used_x = current_x;
                     if(horizontal_advance < 0) used_x = current_x - 1;
                     used_y = std::floor(current_y);
-                    if((used_x < 0 || used_x >= width()) || (used_y < 0 || used_y >= height()) || (case_at(used_x, used_y)->number() != 0)) {
+                    if((used_x < 0 || used_x >= width()) || (used_y < 0 || used_y >= height())) {
                         continue_horizontal = false;
+                    } else if(case_at(used_x, used_y)->number() != 0 && !ignore_collision) {
+                        continue_horizontal = false;
+                        horizontal_case = case_at(used_x, used_y);
                     }
                 }
             } horizontal_x = current_x; horizontal_y = current_y;
@@ -116,11 +124,15 @@ namespace scls {
             if(vertical_advance < 0) to_add = start_y - std::floor(start_y);
             current_x += vertical_ratio * to_add;
             current_y = std::ceil(start_y);
+            if(vertical_advance < 0) current_y = std::floor(start_y);
             // First check
             used_x = std::floor(current_x);
             used_y = current_y;
             if(vertical_advance < 0) used_y = current_y - 1;
-            if(!((used_x < 0 || used_x >= width()) || (used_y < 0 || used_y >= height()) || (case_at(used_x, used_y)->number() != 0))) {
+            // Do the first test
+            if((used_x < 0 || used_x >= width()) || (used_y < 0 || used_y >= height())) {continue_vertical = false;}
+            else if(case_at(used_x, used_y)->number() != 0 && !ignore_collision) {continue_vertical = false;vertical_case = case_at(used_x, used_y);}
+            else {
                 while(continue_vertical) {
                     // Advance the ray
                     current_x += vertical_ratio;
@@ -130,8 +142,12 @@ namespace scls {
                     used_x = std::floor(current_x);
                     used_y = current_y;
                     if(vertical_advance < 0) used_y = current_y - 1;
-                    if((used_x < 0 || used_x >= width()) || (used_y < 0 || used_y >= height()) || (case_at(used_x, used_y)->number() != 0)) {
+                    if((used_x < 0 || used_x >= width()) || (used_y < 0 || used_y >= height())) {
                         continue_vertical = false;
+                    }
+                    else if(case_at(used_x, used_y)->number() != 0 && !ignore_collision) {
+                        continue_vertical = false;
+                        vertical_case = case_at(used_x, used_y);
                     }
                 }
             } vertical_x = current_x; vertical_y = current_y;
@@ -142,9 +158,13 @@ namespace scls {
             Raycast_Map::Raycast to_return;
             // Chose the good collision
             if(distance_horizontal < distance_vertical) {
+                to_return.set_collision_case(horizontal_case);
+                to_return.set_collision_distance(distance_horizontal);
                 to_return.set_collision_x(horizontal_x);
                 to_return.set_collision_y(horizontal_y);
             } else {
+                to_return.set_collision_case(vertical_case);
+                to_return.set_collision_distance(distance_vertical);
                 to_return.set_collision_x(vertical_x);
                 to_return.set_collision_y(vertical_y);
             }
@@ -158,8 +178,8 @@ namespace scls {
         //*********
 
         // Render the 2D part of the engine
-        std::shared_ptr<Image> Raycast_Engine::render_2d() {
-            std::shared_ptr<Image> to_return = std::make_shared<Image>(500, 500, scls::Color(255, 255, 255));
+        std::shared_ptr<__Image_Base> Raycast_Engine::render_2d() {
+            std::shared_ptr<__Image_Base> to_return = std::make_shared<__Image_Base>(500, 500, scls::Color(255, 255, 255));
 
             std::map<int, scls::Color> colors;
             colors[0] = scls::Color(255, 255, 255);
@@ -188,27 +208,71 @@ namespace scls {
             // Calculate the datas for the camera
             double camera_width = case_width / 2.0;
             double camera_x = a_camera.x();
-            double camera_y = a_camera.y();
+            double camera_y = a_camera.z();
+
+            // Draw the camera axis
+            //to_return.get()->fill_rect(camera_x * case_width, 0, delimitation_width, to_return.get()->height(), scls::Color(0, 0, 255));
+            //to_return.get()->fill_rect(0, camera_y * case_width - delimitation_width / 2.0, to_return.get()->width(), delimitation_width, scls::Color(0, 0, 255));
 
             // Draw the rays
-            Raycast_Map::Raycast result = current_map()->raycast(a_camera.x(), a_camera.y(), a_camera.rotation_y());
-            to_return.get()->draw_line(camera_x * case_width, camera_y * case_height, result.collision_x() * case_width, result.collision_y() * case_height, scls::Color(0, 0, 255));
+            double base_angle = -a_camera.rotation_y() + 90;
+            double fov = 45;
+            double rays_number = 100;
+            for(int i = 0;i<static_cast<int>(rays_number);i++) {
+                // Draw a single ray
+                Raycast_Map::Raycast result = current_map()->raycast(a_camera.x(), a_camera.z(), base_angle + (fov / 2.0 - (fov / rays_number) * i));
+                to_return.get()->draw_line(camera_x * case_width, camera_y * case_height, result.collision_x() * case_width, result.collision_y() * case_height, scls::Color(0, 0, 255));
+            } //*/
 
             // Draw the camera
             to_return.get()->fill_rect(camera_x * case_width - (camera_width / 2.0), camera_y * case_height - (camera_width / 2.0), camera_width, camera_width, scls::Color(0, 128, 255));
 
             // Take a screenshot
-            if(window_struct()->key_pressed_during_this_frame("p")) {to_return.get()->save_png("tests/map_2d.png");}
+            if(window_struct()->key_pressed_during_this_frame("p")) {to_return.get()->save_png("tests/rays_2d.png");}
+
+            return to_return;
+        }
+
+        // Render the 3D part of the engine
+        scls::Image img;bool img_used = false;
+        std::shared_ptr<__Image_Base> Raycast_Engine::render_3d() {
+            // Img
+            if(!img_used){img = scls::Image("assets/cobble.png");img_used=true;}
+
+            std::shared_ptr<__Image_Base> to_return = std::make_shared<__Image_Base>(window_struct()->window_width(), window_struct()->window_height(), scls::Color(255, 255, 255));
+
+            // Draw the ground and the sky
+            to_return.get()->fill_rect(0, 0, to_return.get()->width(), to_return.get()->height() / 2.0, scls::Color(125, 125, 255));
+
+            double base_angle = -a_camera.rotation_y() + 90;
+            double fov = 45;
+            double rays_number = to_return.get()->width();
+            double ray_width_in_pixel = to_return.get()->width() / rays_number;
+            for(int i = 0;i<static_cast<int>(rays_number);i++) {
+                // Get the needed ray
+                Raycast_Map::Raycast result = current_map()->raycast(a_camera.x(), a_camera.z(), base_angle + (-fov / 2.0 + (fov / rays_number) * i));
+
+                // Draw the result
+                double block_height = to_return.get()->height() * (1.0 / result.collision_distance());
+                double block_y = to_return.get()->height() / 2.0 - block_height/ 2.0;
+
+                //if(result.collision_case() != 0){to_return.get()->fill_rect(i * ray_width_in_pixel, block_y, ray_width_in_pixel, block_height, scls::Color(255, 0, 0));}
+                if(result.collision_case() != 0){to_return.get()->paste(img.resize_adaptative(ray_width_in_pixel, block_height), i * ray_width_in_pixel, block_y);}
+                else{to_return.get()->fill_rect(i * ray_width_in_pixel, block_y, ray_width_in_pixel, block_height, scls::Color(0, 255, 0));}
+            }
+
+            // Take a screenshot
+            if(window_struct()->key_pressed_during_this_frame("p")) {to_return.get()->save_png("tests/3d.png");}
 
             return to_return;
         }
 
         // Update the camera in the engine
         void Raycast_Engine::update_camera() {
-            if(window_struct()->key_state("s") == scls::Key_State::Pressed) {a_camera.set_y(a_camera.y() + window_struct()->delta_time());}
-            if(window_struct()->key_state("z") == scls::Key_State::Pressed) {a_camera.set_y(a_camera.y() - window_struct()->delta_time());}
-            if(window_struct()->key_state("q") == scls::Key_State::Pressed) {a_camera.set_x(a_camera.x() - window_struct()->delta_time());}
-            if(window_struct()->key_state("d") == scls::Key_State::Pressed) {a_camera.set_x(a_camera.x() + window_struct()->delta_time());}
+            if(window_struct()->key_state("s") == scls::Key_State::Pressed) {a_camera.move_forward(-window_struct()->delta_time());}
+            if(window_struct()->key_state("z") == scls::Key_State::Pressed) {a_camera.move_forward(window_struct()->delta_time());}
+            if(window_struct()->key_state("q") == scls::Key_State::Pressed) {a_camera.move_right(-window_struct()->delta_time());}
+            if(window_struct()->key_state("d") == scls::Key_State::Pressed) {a_camera.move_right(window_struct()->delta_time());}
 
             if(window_struct()->key_state("a") == scls::Key_State::Pressed) {a_camera.set_rotation_y(a_camera.rotation_y() + window_struct()->delta_time() * 70);}
             if(window_struct()->key_state("e") == scls::Key_State::Pressed) {a_camera.set_rotation_y(a_camera.rotation_y() - window_struct()->delta_time() * 70);}
@@ -219,7 +283,7 @@ namespace scls {
             std::unique_ptr<__Temp_Window> raycast = std::make_unique<__Temp_Window>(window_width, window_height, exec_path);
 
             // Create the needed page
-            std::shared_ptr<GUI_Page> page = *raycast.get()->new_page_2d<GUI_Page>("raycast");
+            std::shared_ptr<GUI_Page> page = raycast.get()->new_page_2d<GUI_Page>("raycast");
             raycast.get()->display_page_2d("raycast");
 
             // Create the engine
@@ -246,8 +310,9 @@ namespace scls {
 
                 // Render the raycast
                 engine.update_camera();
-                std::shared_ptr<Image> img = engine.render_2d();
+                std::shared_ptr<__Image_Base> img = engine.render_3d();
                 page.get()->parent_object()->texture()->set_image(img);
+                page.get()->parent_object()->set_should_render_during_this_frame(true);
                 img.reset();
 
                 raycast.get()->update();

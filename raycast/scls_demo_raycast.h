@@ -97,12 +97,20 @@ namespace scls {
                 Raycast(){};
 
                 // Getters and setters
+                inline Case* collision_case() const {return a_collision_case;};
+                inline double collision_distance() const {return a_collision_distance;};
                 inline double collision_x() const {return a_collision_x;};
                 inline double collision_y() const {return a_collision_y;};
+                inline void set_collision_case(Case* new_collision_case){a_collision_case=new_collision_case;};
+                inline void set_collision_distance(double new_collision_distance){a_collision_distance = new_collision_distance;};
                 inline void set_collision_x(double new_collision_x){a_collision_x = new_collision_x;};
                 inline void set_collision_y(double new_collision_y){a_collision_y = new_collision_y;};
 
             private:
+                // Case touched by the collision
+                Case* a_collision_case = 0;
+                // Distance of the collision
+                double a_collision_distance = 0;
                 // X position of the collision
                 double a_collision_x = 0;
                 // Y position of the collision
@@ -110,7 +118,8 @@ namespace scls {
             };
 
             // Does a raycast in the map
-            Raycast raycast(double start_x, double start_y, double angle_in_degrees);
+            Raycast raycast(double start_x, double start_y, double angle_in_degrees, bool ignore_collision);
+            inline Raycast raycast(double start_x, double start_y, double angle_in_degrees) {return raycast(start_x, start_y, angle_in_degrees, false);};
 
         public:
             // Each cases of the Map
@@ -134,13 +143,15 @@ namespace scls {
             //*********
 
             // Create a Raycast_Engine
-            Raycast_Engine(scls::Window* window_struct):a_window_struct(window_struct){a_camera.set_x(0.5);a_camera.set_y(0.5);};
+            Raycast_Engine(scls::Window* window_struct):a_window_struct(window_struct){a_camera.set_x(0.5);a_camera.set_z(0.5);a_camera.set_rotation_y(0);};
 
             // Create a new map in the engine
             inline std::shared_ptr<Raycast_Map> new_map(){std::shared_ptr<Raycast_Map> current_map = std::make_shared<Raycast_Map>();a_maps.push_back(current_map);return current_map;};
 
             // Render the 2D part of the engine
-            std::shared_ptr<Image> render_2d();
+            std::shared_ptr<__Image_Base> render_2d();
+            // Render the 3D part of the engine
+            std::shared_ptr<__Image_Base> render_3d();
             // Update the camera in the engine
             void update_camera();
 

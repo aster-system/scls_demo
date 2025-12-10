@@ -29,7 +29,6 @@ SCLS_INIT
 
 int main(int argc, char* argv[]) {
     scls::demo::use_raycast(500, 500, argv[0]);
-    //scls::demo::use_snake(540, 960, argv[0]);
 
     return 0;
 }
